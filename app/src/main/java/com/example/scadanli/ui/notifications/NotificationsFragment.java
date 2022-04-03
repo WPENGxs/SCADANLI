@@ -1,12 +1,22 @@
 package com.example.scadanli.ui.notifications;
 
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
+import android.app.Activity;
+import android.content.Context;
 import android.content.SharedPreferences;
+import android.net.http.SslError;
+import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.PermissionRequest;
+import android.webkit.SslErrorHandler;
+import android.webkit.WebChromeClient;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -26,7 +36,7 @@ import static android.content.Context.MODE_PRIVATE;
 @SuppressLint("UseSwitchCompatOrMaterialCode")
 public class NotificationsFragment extends Fragment {
 
-    private NotificationsViewModel notificationsViewModel;
+    public NotificationsViewModel notificationsViewModel;
     public com.example.scadanli.databinding.FragmentNotificationsBinding binding;
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -52,6 +62,50 @@ public class NotificationsFragment extends Fragment {
         Button sheds_btu=binding.shedsButton;
         Button greenhouses_btu=binding.greenhousesButton;
         Button field_btu=binding.fieldsButton;
+
+        webView.setWebViewClient(new WebViewClient(){
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                view.loadUrl(url);
+                return true;
+            }
+            public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+                handler.proceed();
+            }
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+            }
+
+        });
+
+        webView.setWebChromeClient(new WebChromeClient(){
+            @Override
+            public void onProgressChanged(WebView view, int newProgress) {
+                // TODO Auto-generated method stub
+                if (newProgress == 100) {
+                    // 网页加载完成
+                    Log.d("加载完成...","success");
+                } else {
+                    // 加载中
+                    Log.d("加载中...",+newProgress+"");
+                }
+            }
+            @Override
+            public void onPermissionRequest(final PermissionRequest request) {
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    request.grant(request.getResources());
+                }
+
+//                getActivity().runOnUiThread(new Runnable() {
+//                    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+//                    @Override
+//                    public void run() {
+//                        request.grant(request.getResources());
+//                    }
+//                });
+            }
+        });
 
         sheds_btu.setOnClickListener(new View.OnClickListener() {
             @Override
