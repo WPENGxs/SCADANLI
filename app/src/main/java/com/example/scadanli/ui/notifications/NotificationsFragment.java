@@ -57,13 +57,15 @@ public class NotificationsFragment extends Fragment {
         webView.getSettings().setUseWideViewPort(true);//扩大缩放比例
         webView.getSettings().setLoadWithOverviewMode(true);
 
-        webView.loadUrl("https://sh.coda.wiki:5001/2000");
+        webView.getSettings().setMediaPlaybackRequiresUserGesture(false);
+
+        webView.loadUrl("https://sh.coda.wiki:5002/2000");
 
         Button sheds_btu=binding.shedsButton;
         Button greenhouses_btu=binding.greenhousesButton;
         Button field_btu=binding.fieldsButton;
 
-        webView.setWebViewClient(new WebViewClient(){
+/*        webView.setWebViewClient(new WebViewClient(){
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 view.loadUrl(url);
@@ -76,7 +78,7 @@ public class NotificationsFragment extends Fragment {
                 super.onPageFinished(view, url);
             }
 
-        });
+        });*/
 
         webView.setWebChromeClient(new WebChromeClient(){
             @Override
@@ -109,22 +111,20 @@ public class NotificationsFragment extends Fragment {
 
         sheds_btu.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                webView.loadUrl("https://sh.coda.wiki:5001/2000");
-            }
+            public void onClick(View v) { webView.loadUrl("https://sh.coda.wiki:5002/2000"); }
         });
 
         greenhouses_btu.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                webView.loadUrl("https://sh.coda.wiki:5001/2001");
+                webView.loadUrl("https://sh.coda.wiki:5002/2001");
             }
         });
 
         field_btu.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                webView.loadUrl("https://sh.coda.wiki:5001/2002");
+                webView.loadUrl("https://sh.coda.wiki:5002/2002");
             }
         });
         
