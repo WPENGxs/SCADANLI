@@ -1,18 +1,22 @@
 package com.example.scadanli.ui.dashboard;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.fragment.app.Fragment;
 //import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
@@ -64,7 +68,57 @@ public class DashboardFragment extends Fragment {
         TextView text_tem=binding.temperature;//温度
         text_tem.setText("32");
 
+        AddLine(binding.infobox,getContext());
+        AddLine(binding.infobox,getContext());
+
         return root;
+    }
+
+    public void AddLine(LinearLayout infobox, Context context){
+        HorizontalScrollView horizontalScrollView=new HorizontalScrollView(context);
+        horizontalScrollView.setHorizontalScrollBarEnabled(false);
+        LinearLayout line=new LinearLayout(context);
+        line.setGravity(View.TEXT_ALIGNMENT_CENTER);
+        horizontalScrollView.addView(line);
+        infobox.addView(horizontalScrollView);
+
+        LayoutInflater inflater=LayoutInflater.from(context);
+        LinearLayout cir_bar=inflater.inflate(R.layout.cir_bar,null).findViewById(R.id.cir_bar);
+        line.addView(cir_bar);
+        LinearLayout display_bar=inflater.inflate(R.layout.display_bar,null).findViewById(R.id.display_bar);
+        line.addView(display_bar);
+        LinearLayout control_bar=inflater.inflate(R.layout.control_bar,null).findViewById(R.id.control_bar);
+        line.addView(control_bar);
+
+    }
+
+    public void AddCirBar(LinearLayout linearLayout, Context context){
+        LinearLayout box=new LinearLayout(context);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setBackgroundResource(R.drawable.round);
+
+        CirCleProgressBar cirCleProgressBar=new CirCleProgressBar(context);
+        cirCleProgressBar.setMinimumWidth(200);
+        cirCleProgressBar.setMinimumHeight(200);
+        cirCleProgressBar.setCircleBgWidth(10);
+        cirCleProgressBar.setCircleWidth(10);
+        cirCleProgressBar.setTextSize(20f);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            cirCleProgressBar.setForegroundGravity(View.TEXT_ALIGNMENT_CENTER);
+        }
+
+        TextView textView=new TextView(context);
+        textView.setWidth(50);
+        textView.setHeight(100);
+        textView.setPadding(10,0,0,0);
+        textView.setGravity(View.TEXT_ALIGNMENT_CENTER);
+        textView.setTextSize(20);
+        textView.setText("0000");
+
+        box.addView(cirCleProgressBar);
+        box.addView(textView);
+
+        linearLayout.addView(box);
     }
 
     @Override

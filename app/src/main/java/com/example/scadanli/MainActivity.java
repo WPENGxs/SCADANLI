@@ -3,6 +3,7 @@ package com.example.scadanli;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -33,6 +34,9 @@ public class MainActivity extends AppCompatActivity {
     public static String inputText;
     public static Context context;//声明防止无法在DashboardFragment click中调用getApplicationContext()
 
+    public static Data data;
+    public static SQLiteDatabase database;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -46,6 +50,9 @@ public class MainActivity extends AppCompatActivity {
         SpeechUtility.createUtility(MainActivity.this, "appid=" + "cf2e2940");
         // 以下语句用于设置日志开关（默认开启），设置成false时关闭语音云SDK日志打印
         Setting.setShowLog(true);
+
+        Data data=new Data(this,"data",null,1);
+        database=data.getWritableDatabase();
 
         super.onCreate(savedInstanceState);
 

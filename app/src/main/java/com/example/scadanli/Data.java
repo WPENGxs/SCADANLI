@@ -19,6 +19,7 @@ public class Data extends SQLiteOpenHelper {
         String sql="CREATE TABLE user(userid integer primary key autoincrement,"+
                 "title text not null,"+//标题
                 "room text not null,"+//房间
+                "line text not null,"+//布局的列数
                 "可视化界面 text ,"+
                 "信息 text,"+
                 "控制行1 text,"+
