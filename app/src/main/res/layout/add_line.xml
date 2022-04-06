@@ -6,10 +6,10 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="10dp"
         android:orientation="vertical"
-        android:id="@+id/display_bar">
+        android:id="@+id/add_line">
 
         <LinearLayout
-            android:layout_width="120dp"
+            android:layout_width="240dp"
             android:layout_height="120dp"
             android:layout_marginTop="10dp"
             android:layout_marginEnd="10dp"
@@ -17,24 +17,15 @@
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/display"
-                android:layout_width="match_parent"
-                android:layout_height="30dp"
-                android:textSize="20sp" />
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:background="@drawable/ic_add" />
 
             <TextView
-                android:id="@+id/display_num"
-                android:layout_width="match_parent"
-                android:layout_height="40dp"
-                android:textColor="@color/black"
-                android:textSize="30sp" />
-
-            <TextView
-                android:id="@+id/display_unit"
                 android:layout_width="match_parent"
                 android:layout_height="30dp"
-                android:gravity="end"
-                android:textSize="20sp" />
+                android:text="长按添加新的一行"
+                android:textSize="25sp" />
 
         </LinearLayout>
 

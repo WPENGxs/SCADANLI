@@ -17,13 +17,13 @@ public class Data extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase Database) {
         String sql="CREATE TABLE user(userid integer primary key autoincrement,"+
-                "title text not null,"+//标题
-                "room text not null,"+//房间
-                "line text not null,"+//布局的列数
-                "可视化界面 text ,"+
-                "信息 text,"+
-                "控制行1 text,"+
-                "控制行2 text"+
+                "type text not null,"+//类型 cir,control,display
+                "room text not null,"+//房间 sheds,greenhouses,fields
+                "line text not null,"+//布局的行数
+                "title text ,"+//名称
+                "value text,"+//值 cir_bar 进度,control 开/关,display 数值
+                "unit text,"+//单位 只有display有此项
+                "remark text"+//留的冗余项
                 ")";
         Database.execSQL(sql);
     }

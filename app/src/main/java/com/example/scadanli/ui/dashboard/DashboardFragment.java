@@ -1,18 +1,25 @@
 package com.example.scadanli.ui.dashboard;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -26,10 +33,23 @@ import com.example.scadanli.MainActivity;
 import com.example.scadanli.R;
 import com.example.scadanli.databinding.FragmentDashboardBinding;
 
+import org.w3c.dom.Text;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+
 public class DashboardFragment extends Fragment {
 
     public DashboardViewModel dashboardViewModel;
     public FragmentDashboardBinding binding;
+    public SQLiteDatabase database;
+    public String sql;
+
+    public List<Room> list=new ArrayList<>();
+    public String list_line;
 
     @SuppressLint("SetTextI18n")
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -40,89 +60,510 @@ public class DashboardFragment extends Fragment {
         binding = FragmentDashboardBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
-        CirCleProgressBar cir_bar_hum=binding.humidityCircle;//湿度进度条
-        CirCleProgressBar cir_bar_water=binding.waterVapourSaturationCircle;//水汽饱和度进度条
-        CirCleProgressBar cir_br_oxygen=binding.oxygenCircle;//氧气含量
+        database=MainActivity.database;
 
-        CirCleProgressBar cir_bar_soil=binding.soilCircle;//土壤湿度
-        CirCleProgressBar cir_bar_carbon=binding.carbonCircle;//二氧化碳浓度
+        Cursor cursor = database.rawQuery("select * from user order by line,userid asc", null);
+        while (cursor.moveToNext()) {
+            Room room=new Room();
+            room.userid=cursor.getString(cursor.getColumnIndex("userid"));
+            room.type=cursor.getString(cursor.getColumnIndex("type"));
+            room.room=cursor.getString(cursor.getColumnIndex("room"));
+            room.line=cursor.getString(cursor.getColumnIndex("line"));
+            room.title=cursor.getString(cursor.getColumnIndex("title"));
+            room.value=cursor.getString(cursor.getColumnIndex("value"));
+            room.unit=cursor.getString(cursor.getColumnIndex("unit"));
+            room.remark=cursor.getString(cursor.getColumnIndex("remark"));
+            list.add(room);
+        }
+        cursor.close();
 
-        cir_bar_hum.setText(true,"50%");
-        cir_bar_hum.setCurrentProgress(50f);//设置进度条进度
-        cir_bar_hum.setCircleColor(Color.parseColor("#5f7099"));
+        list_line="1";
+        boolean IsNotCreate=true;
+        for(int i=0;i<list.size();i++){
+            if(!list.get(i).line.equals(list_line)) {
+                list_line = Integer.parseInt(list_line) + 1 + "";
+                IsNotCreate=true;
+            }
+            if (IsNotCreate) {
+                AddLine(binding.infobox, getContext(), list_line);
+                IsNotCreate=false;
+            }
+        }
 
-        cir_bar_water.setText(true,"50%");
-        cir_bar_water.setCurrentProgress(50f);
-        cir_bar_water.setCircleColor(Color.parseColor("#d21e6d"));
-
-        cir_br_oxygen.setText(true,"20%");
-        cir_br_oxygen.setCurrentProgress(20f);
-        cir_br_oxygen.setCircleColor(Color.parseColor("#d21e6d"));
-
-        cir_bar_soil.setText(true,"30%");
-        cir_bar_soil.setCurrentProgress(30f);
-
-        cir_bar_carbon.setText(true,"10%");
-        cir_bar_carbon.setCurrentProgress(10f );
-
-        TextView text_tem=binding.temperature;//温度
-        text_tem.setText("32");
-
-        AddLine(binding.infobox,getContext());
-        AddLine(binding.infobox,getContext());
+        CreateLine(binding.infobox,getContext());
+        Toast.makeText(getContext(),list_line,Toast.LENGTH_LONG).show();
 
         return root;
     }
 
-    public void AddLine(LinearLayout infobox, Context context){
-        HorizontalScrollView horizontalScrollView=new HorizontalScrollView(context);
-        horizontalScrollView.setHorizontalScrollBarEnabled(false);
-        LinearLayout line=new LinearLayout(context);
-        line.setGravity(View.TEXT_ALIGNMENT_CENTER);
-        horizontalScrollView.addView(line);
-        infobox.addView(horizontalScrollView);
-
+    /**
+     *  新建一行
+     * @param infobox
+     *          LinearLayout
+     * @param context
+     *          Context
+     */
+    public void CreateLine(LinearLayout infobox,Context context){
         LayoutInflater inflater=LayoutInflater.from(context);
-        LinearLayout cir_bar=inflater.inflate(R.layout.cir_bar,null).findViewById(R.id.cir_bar);
-        line.addView(cir_bar);
-        LinearLayout display_bar=inflater.inflate(R.layout.display_bar,null).findViewById(R.id.display_bar);
-        line.addView(display_bar);
-        LinearLayout control_bar=inflater.inflate(R.layout.control_bar,null).findViewById(R.id.control_bar);
-        line.addView(control_bar);
 
+        LinearLayout hor_bar=inflater.inflate(R.layout.horizontal_scroll_view,null).findViewById(R.id.hor_bar);
+        LinearLayout line=hor_bar.findViewById(R.id.hor);
+        infobox.addView(hor_bar);
+
+        LinearLayout add_line=inflater.inflate(R.layout.add_line,null).findViewById(R.id.add_line);
+        add_line.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                AlertDialog.Builder dialog=new AlertDialog.Builder(context);
+                dialog.setTitle("新建操作");
+                dialog.setMessage("您要新建一行么");
+                dialog.setPositiveButton("是的", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        infobox.removeView(hor_bar);
+                        list_line=Integer.parseInt(list_line)+1+"";
+                        AddLine(infobox,context,list_line);
+                        CreateLine(infobox,context);
+                    }
+                });
+                dialog.show();
+
+                return true;
+            }
+        });
+
+        line.addView(add_line);
     }
 
-    public void AddCirBar(LinearLayout linearLayout, Context context){
-        LinearLayout box=new LinearLayout(context);
-        box.setOrientation(LinearLayout.VERTICAL);
-        box.setBackgroundResource(R.drawable.round);
+    /**
+     * 行中添加组件
+     * @param infobox
+     *          LinearLayout
+     * @param context
+     *          Context
+     * @param line_num
+     *          行数
+     */
+    public LinearLayout AddLine(LinearLayout infobox, Context context,String line_num){
+        LayoutInflater inflater=LayoutInflater.from(context);
 
-        CirCleProgressBar cirCleProgressBar=new CirCleProgressBar(context);
-        cirCleProgressBar.setMinimumWidth(200);
-        cirCleProgressBar.setMinimumHeight(200);
-        cirCleProgressBar.setCircleBgWidth(10);
-        cirCleProgressBar.setCircleWidth(10);
-        cirCleProgressBar.setTextSize(20f);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            cirCleProgressBar.setForegroundGravity(View.TEXT_ALIGNMENT_CENTER);
+        LinearLayout hor_bar=inflater.inflate(R.layout.horizontal_scroll_view,null).findViewById(R.id.hor_bar);
+        LinearLayout line=hor_bar.findViewById(R.id.hor);
+        infobox.addView(hor_bar);
+
+        for(int i=0;i<list.size();i++){
+            if(list.get(i).line.equals(line_num)){
+                switch (list.get(i).type) {
+                    case "cir":
+                        AddCirBar(line, context, list.get(i).title,i);
+                        break;
+                    case "control":
+                        AddControlBar(line, context, list.get(i).title,i);
+                        break;
+                    case "display":
+                        AddDisplayBar(line, context, list.get(i).title, list.get(i).unit,i);
+                        break;
+                    default:
+                        Toast.makeText(context, "数据库数据出错", Toast.LENGTH_LONG).show();
+                        break;
+                }
+            }
         }
 
-        TextView textView=new TextView(context);
-        textView.setWidth(50);
-        textView.setHeight(100);
-        textView.setPadding(10,0,0,0);
-        textView.setGravity(View.TEXT_ALIGNMENT_CENTER);
-        textView.setTextSize(20);
-        textView.setText("0000");
+        LinearLayout add_bar=inflater.inflate(R.layout.add_bar,null).findViewById(R.id.add_bar);
+        add_bar.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                AlertDialog.Builder dialog=new AlertDialog.Builder(context);
+                dialog.setTitle("添加组件");
+                dialog.setItems(new String[]{"添加进度组件","添加预览组件","添加控制组件","删除这一行"}, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        switch (which){
+                            case 0:
+                                EditText cir=new EditText(context);
+                                cir.setHint("名称");
+                                AlertDialog.Builder dialog_cir=new AlertDialog.Builder(context);
+                                dialog_cir.setTitle("进度组件名称");
+                                dialog_cir.setView(cir);
+                                dialog_cir.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        String cir_str=cir.getText().toString();
 
-        box.addView(cirCleProgressBar);
-        box.addView(textView);
+                                        Room room=new Room();
+                                        room.type="cir";
+                                        room.room="sheds";
+                                        room.line=line_num;
+                                        room.title=cir_str;
+                                        room.value="0";
+                                        room.unit="";
+                                        room.remark="";
+                                        list.add(room);
 
-        linearLayout.addView(box);
+                                        line.removeView(add_bar);
+                                        AddCirBar(line,context,cir_str,list.size()-1);
+                                        line.addView(add_bar);
+
+
+                                    }
+                                });
+                                dialog_cir.show();
+                                break;
+                            case 1:
+                                EditText display_title=new EditText(context);
+                                display_title.setHint("名称");
+                                EditText display_unit=new EditText(context);
+                                display_unit.setHint("单位");
+                                LinearLayout display_layout=new LinearLayout(context);
+                                display_layout.setOrientation(LinearLayout.VERTICAL);
+                                display_layout.addView(display_title);
+                                display_layout.addView(display_unit);
+
+                                AlertDialog.Builder dialog_display=new AlertDialog.Builder(context);
+                                dialog_display.setTitle("预览组件名称");
+                                dialog_display.setView(display_layout);
+                                dialog_display.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        String title=display_title.getText().toString();
+                                        String unit=display_unit.getText().toString();
+
+                                        Room room=new Room();
+                                        room.type="display";
+                                        room.room="sheds";
+                                        room.line=line_num;
+                                        room.title=title;
+                                        room.value="0";
+                                        room.unit=unit;
+                                        room.remark="";
+                                        list.add(room);
+
+                                        line.removeView(add_bar);
+                                        AddDisplayBar(line,context,title,unit,list.size()-1);
+                                        line.addView(add_bar);
+
+
+                                    }
+                                });
+                                dialog_display.show();
+                                break;
+                            case 2:
+                                EditText control=new EditText(context);
+                                control.setHint("名称");
+
+                                AlertDialog.Builder dialog_control=new AlertDialog.Builder(context);
+                                dialog_control.setTitle("控制组件名称");
+                                dialog_control.setView(control);
+                                dialog_control.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        String control_str=control.getText().toString();
+
+                                        Room room=new Room();
+                                        room.type="control";
+                                        room.room="sheds";
+                                        room.line=line_num;
+                                        room.title=control_str;
+                                        room.value="开";
+                                        room.unit="";
+                                        room.remark="";
+                                        list.add(room);
+
+                                        line.removeView(add_bar);
+                                        AddControlBar(line,context,control_str,list.size()-1);
+                                        line.addView(add_bar);
+
+
+                                    }
+                                });
+                                dialog_control.show();
+                                break;
+                            case 3:
+                                AlertDialog.Builder del=new AlertDialog.Builder(context);
+                                del.setTitle("删除操作");
+                                del.setMessage("您真的要删除么,该操作不可逆");
+                                del.setPositiveButton("真的", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        List<Room> del=new ArrayList<>();
+                                        for(int i=0;i<list.size();i++) {
+                                            if(list.get(i).line.equals(list_line)) {
+                                                del.add(list.get(i));
+                                            }
+                                        }
+                                        list.removeAll(del);
+
+                                        infobox.removeView(hor_bar);
+                                        Toast.makeText(context,"删除成功",Toast.LENGTH_LONG).show();
+                                    }
+                                });
+                                del.show();
+                                break;
+                        }
+                    }
+                });
+
+                dialog.show();
+                return true;
+            }
+        });
+        line.addView(add_bar);
+        return line;
+    }
+
+    /**
+     *  添加进度组件
+     * @param line
+     *          传入的LinearLayout
+     * @param context
+     *          context
+     * @param str
+     *          组件的名称
+     * @param index
+     *          list中的index
+     */
+    public void AddCirBar(LinearLayout line, Context context,String str,int index){
+        LayoutInflater inflater=LayoutInflater.from(context);
+        LinearLayout cir_bar=inflater.inflate(R.layout.cir_bar,null).findViewById(R.id.cir_bar);
+
+        CirCleProgressBar cir_circle=cir_bar.findViewById(R.id.cir_circle);
+        cir_circle.setText(true,list.get(index).value+"%");
+        cir_circle.setCurrentProgress(Float.parseFloat(list.get(index).value));
+
+        TextView cir=cir_bar.findViewById(R.id.cir);
+        cir.setText(str);
+
+        cir_bar.setClickable(true);
+        cir_bar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                EditText editText=new EditText(context);
+                editText.setHint("进度数值(请输入纯数字)");
+
+                AlertDialog.Builder dialog=new AlertDialog.Builder(context);
+                dialog.setTitle("设置进度条数值");
+                dialog.setView(editText);
+                dialog.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String str=editText.getText().toString();
+                        list.get(index).value=str;
+                        cir_circle.setText(true,str+"%");
+                        cir_circle.setCurrentProgress(Float.parseFloat(str));
+                    }
+                });
+                dialog.show();
+            }
+        });
+        cir_bar.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                AlertDialog.Builder dialog=new AlertDialog.Builder(context);
+                dialog.setTitle("注意");
+                dialog.setMessage("是否要删除该组件");
+                dialog.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        list.remove(index);
+
+                        line.removeView(cir_bar);
+                        Toast.makeText(context,"删除成功",Toast.LENGTH_LONG).show();
+                    }
+                });
+                dialog.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+
+                    }
+                });
+                dialog.show();
+
+                return true;
+            }
+        });
+        line.addView(cir_bar);
+    }
+
+    /**
+     *
+     *  添加预览组件
+     * @param line
+     *          传入的LinearLayout
+     * @param context
+     *          context
+     * @param display_title
+     *          组件的名称
+     * @param unit_str
+     *          组件单位
+     * @param index
+     *          list中的index
+     */
+    @SuppressLint("SetTextI18n")
+    public void AddDisplayBar(LinearLayout line, Context context, String display_title, String unit_str,int index){
+        LayoutInflater inflater=LayoutInflater.from(context);
+        LinearLayout display_bar=inflater.inflate(R.layout.display_bar,null).findViewById(R.id.display_bar);
+
+        TextView display=display_bar.findViewById(R.id.display);
+        display.setText(display_title);
+
+        TextView num=display_bar.findViewById(R.id.display_num);
+        num.setText(list.get(index).value);
+
+        TextView unit=display_bar.findViewById(R.id.display_unit);
+        unit.setText(unit_str);
+
+        display_bar.setClickable(true);
+        display_bar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                EditText editText=new EditText(context);
+                editText.setHint("数值");
+
+                AlertDialog.Builder dialog=new AlertDialog.Builder(context);
+                dialog.setTitle("展示数值");
+                dialog.setView(editText);
+                dialog.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String str=editText.getText().toString();
+                        list.get(index).value=str;
+                        num.setText(str);
+                        Toast.makeText(context,"设置完毕",Toast.LENGTH_LONG).show();
+                    }
+                });
+                dialog.show();
+            }
+        });
+        display_bar.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                EditText editText=new EditText(context);
+                editText.setHint("名称");
+
+                AlertDialog.Builder dialog=new AlertDialog.Builder(context);
+                dialog.setTitle("注意");
+                dialog.setMessage("是否要删除该组件");
+                dialog.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        list.remove(index);
+
+                        line.removeView(display_bar);
+                        Toast.makeText(context,"删除成功",Toast.LENGTH_LONG).show();
+                    }
+                });
+                dialog.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+
+                    }
+                });
+                dialog.show();
+
+                return true;
+            }
+        });
+        line.addView(display_bar);
+    }
+
+    /**
+     *  添加控制组件
+     * @param line
+     *          传入的LinearLayout
+     * @param context
+     *          context
+     * @param str
+     *          组件的名称
+     * @param index
+     *          list中的index
+     */
+    @SuppressLint("SetTextI18n")
+    public void AddControlBar(LinearLayout line, Context context, String str,int index){
+        LayoutInflater inflater=LayoutInflater.from(context);
+        LinearLayout control_bar=inflater.inflate(R.layout.control_bar,null).findViewById(R.id.control_bar);
+
+        TextView title=control_bar.findViewById(R.id.control_title);
+        title.setText(str);
+
+        TextView time=control_bar.findViewById(R.id.control_time);
+        time.setText("早上9:00");
+
+        TextView status=control_bar.findViewById(R.id.control_status);
+        status.setText(list.get(index).value);
+
+        control_bar.setClickable(true);
+        control_bar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(status.getText().equals("开")){
+                    status.setText("关");
+                    list.get(index).value="关";
+                    Toast.makeText(context,"已关闭",Toast.LENGTH_LONG).show();
+                } else{
+                    status.setText("开");
+                    list.get(index).value="开";
+                    Toast.makeText(context,"已开启",Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+        control_bar.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                EditText editText=new EditText(context);
+                editText.setHint("名称");
+
+                AlertDialog.Builder dialog=new AlertDialog.Builder(context);
+                dialog.setTitle("注意");
+                dialog.setMessage("是否要删除该组件");
+                dialog.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        list.remove(index);
+
+                        line.removeView(control_bar);
+                        Toast.makeText(context,"删除成功",Toast.LENGTH_LONG).show();
+                    }
+                });
+                dialog.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+
+                    }
+                });
+                dialog.show();
+
+                return true;
+            }
+        });
+        line.addView(control_bar);
     }
 
     @Override
     public void onDestroyView() {
+        Log.e("DestroyView","list -> database");
+        sql="delete from user";
+        database.execSQL(sql);
+        Collections.sort(list, new Comparator<Room>() {
+            @Override
+            public int compare(Room o1, Room o2) {
+                int i=Integer.parseInt(o1.line)-Integer.parseInt(o2.line);
+                return i;
+            }
+        });
+        for(int i=0;i<list.size();i++){
+            sql="insert into user(type,room,line,title,value,unit,remark)"+
+                    "values('"+list.get(i).type+//type
+                    "','"+list.get(i).room+//room
+                    "','"+list.get(i).line+//line
+                    "','"+list.get(i).title+//title
+                    "','"+list.get(i).value+//value
+                    "','"+list.get(i).unit+//unit
+                    "','"+list.get(i).remark+//remark
+                    "')";
+            database.execSQL(sql);
+        }
+
         super.onDestroyView();
         binding = null;
     }
