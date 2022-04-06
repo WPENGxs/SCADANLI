@@ -464,6 +464,10 @@ public class DashboardFragment extends Fragment {
                                 del.setTitle("删除操作");
                                 del.setMessage("您真的要删除么,该操作不可逆" +
                                         "\n注意:\n不能跨行删除,单行删除必须从最后一行开始删除");
+                                /*
+                                这里有一个不能跨行删除的bug,暂时不想修
+                                20220406
+                                 */
                                 del.setPositiveButton("真的", new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {
