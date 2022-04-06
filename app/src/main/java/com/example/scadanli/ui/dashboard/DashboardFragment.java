@@ -49,9 +49,11 @@ public class DashboardFragment extends Fragment {
     public String sql;
 
     public List<Room> list=new ArrayList<>();
-    public String list_line;
+    public String list_line_sheds;
+    public String list_line_greenhouses;
+    public String list_line_fields;
 
-    @SuppressLint("SetTextI18n")
+    @SuppressLint({"SetTextI18n", "UseCompatLoadingForDrawables"})
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
         dashboardViewModel =
@@ -77,20 +79,112 @@ public class DashboardFragment extends Fragment {
         }
         cursor.close();
 
-        list_line="1";
+        list_line_sheds="1";
         boolean IsNotCreate=true;
         for(int i=0;i<list.size();i++){
-            if(!list.get(i).line.equals(list_line)) {
-                list_line = Integer.parseInt(list_line) + 1 + "";
-                IsNotCreate=true;
-            }
-            if (IsNotCreate) {
-                AddLine(binding.infobox, getContext(), list_line);
-                IsNotCreate=false;
+            if(list.get(i).room.equals("sheds")) {
+                if (!list.get(i).line.equals(list_line_sheds)) {
+                    list_line_sheds = Integer.parseInt(list_line_sheds) + 1 + "";
+                    IsNotCreate = true;
+                }
+                if (IsNotCreate) {
+                    AddLine(binding.infobox, getContext(),"sheds");
+                    IsNotCreate = false;
+                }
             }
         }
 
-        CreateLine(binding.infobox,getContext());
+        CreateLine(binding.infobox,getContext(),"sheds");
+
+        binding.shedsButton.setBackground(getResources().getDrawable(R.drawable.round_select));
+        binding.greenhousesButton.setBackground(getResources().getDrawable(R.drawable.round));
+        binding.fieldsButton.setBackground(getResources().getDrawable(R.drawable.round));
+
+
+
+        binding.shedsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                binding.infobox.removeAllViews();
+
+                list_line_sheds="1";
+                boolean IsNotCreate=true;
+                for(int i=0;i<list.size();i++){
+                    if(list.get(i).room.equals("sheds")) {
+                        if (!list.get(i).line.equals(list_line_sheds)) {
+                            list_line_sheds = Integer.parseInt(list_line_sheds) + 1 + "";
+                            IsNotCreate = true;
+                        }
+                        if (IsNotCreate) {
+                            AddLine(binding.infobox, getContext(),"sheds");
+                            IsNotCreate = false;
+                        }
+                    }
+                }
+
+                CreateLine(binding.infobox,getContext(),"sheds");
+
+                binding.shedsButton.setBackground(getResources().getDrawable(R.drawable.round_select));
+                binding.greenhousesButton.setBackground(getResources().getDrawable(R.drawable.round));
+                binding.fieldsButton.setBackground(getResources().getDrawable(R.drawable.round));
+            }
+        });
+
+        binding.greenhousesButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                binding.infobox.removeAllViews();
+
+                list_line_greenhouses="1";
+                boolean IsNotCreate=true;
+                for(int i=0;i<list.size();i++){
+                    if(list.get(i).room.equals("greenhouses")) {
+                        if (!list.get(i).line.equals(list_line_greenhouses)) {
+                            list_line_greenhouses = Integer.parseInt(list_line_greenhouses) + 1 + "";
+                            IsNotCreate = true;
+                        }
+                        if (IsNotCreate) {
+                            AddLine(binding.infobox, getContext(),"greenhouses");
+                            IsNotCreate = false;
+                        }
+                    }
+                }
+
+                CreateLine(binding.infobox,getContext(),"greenhouses");
+
+                binding.shedsButton.setBackground(getResources().getDrawable(R.drawable.round));
+                binding.greenhousesButton.setBackground(getResources().getDrawable(R.drawable.round_select));
+                binding.fieldsButton.setBackground(getResources().getDrawable(R.drawable.round));
+            }
+        });
+
+        binding.fieldsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                binding.infobox.removeAllViews();
+
+                list_line_fields="1";
+                boolean IsNotCreate=true;
+                for(int i=0;i<list.size();i++){
+                    if(list.get(i).room.equals("fields")) {
+                        if (!list.get(i).line.equals(list_line_fields)) {
+                            list_line_fields = Integer.parseInt(list_line_fields) + 1 + "";
+                            IsNotCreate = true;
+                        }
+                        if (IsNotCreate) {
+                            AddLine(binding.infobox, getContext(),"fields");
+                            IsNotCreate = false;
+                        }
+                    }
+                }
+
+                CreateLine(binding.infobox,getContext(),"fields");
+
+                binding.shedsButton.setBackground(getResources().getDrawable(R.drawable.round));
+                binding.greenhousesButton.setBackground(getResources().getDrawable(R.drawable.round));
+                binding.fieldsButton.setBackground(getResources().getDrawable(R.drawable.round_select));
+            }
+        });
 
         return root;
     }
@@ -102,7 +196,7 @@ public class DashboardFragment extends Fragment {
      * @param context
      *          Context
      */
-    public void CreateLine(LinearLayout infobox,Context context){
+    public void CreateLine(LinearLayout infobox,Context context,String line_room){
         LayoutInflater inflater=LayoutInflater.from(context);
 
         LinearLayout hor_bar=inflater.inflate(R.layout.horizontal_scroll_view,null).findViewById(R.id.hor_bar);
@@ -120,9 +214,24 @@ public class DashboardFragment extends Fragment {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         infobox.removeView(hor_bar);
-                        list_line=Integer.parseInt(list_line)+1+"";
-                        AddLine(infobox,context,list_line);
-                        CreateLine(infobox,context);
+
+                        switch (line_room){
+                            case "sheds":
+                                list_line_sheds=Integer.parseInt(list_line_sheds)+1+"";
+                                break;
+                            case "greenhouses":
+                                list_line_greenhouses=Integer.parseInt(list_line_greenhouses)+1+"";
+                                break;
+                            case "fields":
+                                list_line_fields=Integer.parseInt(list_line_fields)+1+"";
+                                break;
+                            default:
+                                Toast.makeText(context,"数据库文件出错",Toast.LENGTH_LONG).show();
+                                break;
+                        }
+
+                        AddLine(infobox,context,line_room);
+                        CreateLine(infobox,context,line_room);
                     }
                 });
                 dialog.show();
@@ -136,38 +245,110 @@ public class DashboardFragment extends Fragment {
 
     /**
      * 行中添加组件
+     * 关于我在这个函数里写了过多的switch和if这件事(这页代码半天写完的,不想优化了,累了)
      * @param infobox
      *          LinearLayout
      * @param context
      *          Context
-     * @param line_num
-     *          行数
+     * @param line_room
+     *          当前处在哪个房间
      */
-    public LinearLayout AddLine(LinearLayout infobox, Context context,String line_num){
+    public void AddLine(LinearLayout infobox, Context context,String line_room){
         LayoutInflater inflater=LayoutInflater.from(context);
 
         LinearLayout hor_bar=inflater.inflate(R.layout.horizontal_scroll_view,null).findViewById(R.id.hor_bar);
         LinearLayout line=hor_bar.findViewById(R.id.hor);
         infobox.addView(hor_bar);
 
-        for(int i=0;i<list.size();i++){
-            if(list.get(i).line.equals(line_num)){
-                switch (list.get(i).type) {
-                    case "cir":
-                        AddCirBar(line, context, list.get(i).title,i);
-                        break;
-                    case "control":
-                        AddControlBar(line, context, list.get(i).title,i);
-                        break;
-                    case "display":
-                        AddDisplayBar(line, context, list.get(i).title, list.get(i).unit,i);
-                        break;
-                    default:
-                        Toast.makeText(context, "数据库数据出错", Toast.LENGTH_LONG).show();
-                        break;
+        String line_num;
+        switch (line_room){
+            case "sheds":
+                line_num=list_line_sheds;
+                for(int i=0;i<list.size();i++){
+                    if(list.get(i).line.equals(line_num)){
+                        switch (list.get(i).type) {
+                            case "cir":
+                                if(list.get(i).room.equals("sheds")) {
+                                    AddCirBar(line, context, list.get(i).title, i);
+                                }
+                                break;
+                            case "control":
+                                if(list.get(i).room.equals("sheds")) {
+                                    AddControlBar(line, context, list.get(i).title, i);
+                                }
+                                break;
+                            case "display":
+                                if(list.get(i).room.equals("sheds")) {
+                                    AddDisplayBar(line, context, list.get(i).title, list.get(i).unit, i);
+                                }
+                                break;
+                            default:
+                                Toast.makeText(context, "数据库文件出错", Toast.LENGTH_LONG).show();
+                                break;
+                        }
+                    }
                 }
-            }
+                break;
+            case "greenhouses":
+                line_num=list_line_greenhouses;
+                for(int i=0;i<list.size();i++){
+                    if(list.get(i).line.equals(line_num)){
+                        switch (list.get(i).type) {
+                            case "cir":
+                                if(list.get(i).room.equals("greenhouses")) {
+                                    AddCirBar(line, context, list.get(i).title, i);
+                                }
+                                break;
+                            case "control":
+                                if(list.get(i).room.equals("greenhouses")) {
+                                    AddControlBar(line, context, list.get(i).title, i);
+                                }
+                                break;
+                            case "display":
+                                if(list.get(i).room.equals("greenhouses")) {
+                                    AddDisplayBar(line, context, list.get(i).title, list.get(i).unit, i);
+                                }
+                                break;
+                            default:
+                                Toast.makeText(context, "数据库文件出错", Toast.LENGTH_LONG).show();
+                                break;
+                        }
+                    }
+                }
+                break;
+            case "fields":
+                line_num=list_line_fields;
+                for(int i=0;i<list.size();i++){
+                    if(list.get(i).line.equals(line_num)){
+                        switch (list.get(i).type) {
+                            case "cir":
+                                if(list.get(i).room.equals("fields")) {
+                                    AddCirBar(line, context, list.get(i).title, i);
+                                }
+                                break;
+                            case "control":
+                                if(list.get(i).room.equals("fields")) {
+                                    AddControlBar(line, context, list.get(i).title, i);
+                                }
+                                break;
+                            case "display":
+                                if(list.get(i).room.equals("fields")) {
+                                    AddDisplayBar(line, context, list.get(i).title, list.get(i).unit, i);
+                                }
+                                break;
+                            default:
+                                Toast.makeText(context, "数据库文件出错", Toast.LENGTH_LONG).show();
+                                break;
+                        }
+                    }
+                }
+                break;
+            default:
+                line_num="";
+                break;
         }
+
+
 
         LinearLayout add_bar=inflater.inflate(R.layout.add_bar,null).findViewById(R.id.add_bar);
         add_bar.setOnLongClickListener(new View.OnLongClickListener() {
@@ -192,7 +373,7 @@ public class DashboardFragment extends Fragment {
 
                                         Room room=new Room();
                                         room.type="cir";
-                                        room.room="sheds";
+                                        room.room=line_room;
                                         room.line=line_num;
                                         room.title=cir_str;
                                         room.value="0";
@@ -230,7 +411,7 @@ public class DashboardFragment extends Fragment {
 
                                         Room room=new Room();
                                         room.type="display";
-                                        room.room="sheds";
+                                        room.room=line_room;
                                         room.line=line_num;
                                         room.title=title;
                                         room.value="0";
@@ -261,7 +442,7 @@ public class DashboardFragment extends Fragment {
 
                                         Room room=new Room();
                                         room.type="control";
-                                        room.room="sheds";
+                                        room.room=line_room;
                                         room.line=line_num;
                                         room.title=control_str;
                                         room.value="开";
@@ -281,14 +462,17 @@ public class DashboardFragment extends Fragment {
                             case 3:
                                 AlertDialog.Builder del=new AlertDialog.Builder(context);
                                 del.setTitle("删除操作");
-                                del.setMessage("您真的要删除么,该操作不可逆");
+                                del.setMessage("您真的要删除么,该操作不可逆" +
+                                        "\n注意:\n不能跨行删除,单行删除必须从最后一行开始删除");
                                 del.setPositiveButton("真的", new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {
                                         List<Room> del=new ArrayList<>();
                                         for(int i=0;i<list.size();i++) {
-                                            if(list.get(i).line.equals(list_line)) {
-                                                del.add(list.get(i));
+                                            if(list.get(i).room.equals(line_room)) {
+                                                if (list.get(i).line.equals(line_num)) {
+                                                    del.add(list.get(i));
+                                                }
                                             }
                                         }
                                         list.removeAll(del);
@@ -308,7 +492,6 @@ public class DashboardFragment extends Fragment {
             }
         });
         line.addView(add_bar);
-        return line;
     }
 
     /**
@@ -347,8 +530,12 @@ public class DashboardFragment extends Fragment {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         String str=editText.getText().toString();
-                        list.get(index).value=str;
-                        cir_circle.setText(true,str+"%");
+                        if(!str.equals("")) {
+                            list.get(index).value = str;
+                        }else{
+                            list.get(index).value = "0";
+                        }
+                        cir_circle.setText(true, str + "%");
                         cir_circle.setCurrentProgress(Float.parseFloat(str));
                     }
                 });
