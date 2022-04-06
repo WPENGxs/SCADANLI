@@ -30,6 +30,7 @@ import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.scadanli.MainActivity;
+import com.example.scadanli.R;
 
 import static android.content.Context.MODE_PRIVATE;
 
@@ -39,7 +40,7 @@ public class NotificationsFragment extends Fragment {
     public NotificationsViewModel notificationsViewModel;
     public com.example.scadanli.databinding.FragmentNotificationsBinding binding;
 
-    @SuppressLint("SetJavaScriptEnabled")
+    @SuppressLint({"SetJavaScriptEnabled", "UseCompatLoadingForDrawables"})
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
         notificationsViewModel =
@@ -47,6 +48,10 @@ public class NotificationsFragment extends Fragment {
 
         binding = com.example.scadanli.databinding.FragmentNotificationsBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
+
+        Button sheds_btu=binding.shedsButton;
+        Button greenhouses_btu=binding.greenhousesButton;
+        Button field_btu=binding.fieldsButton;
 
         WebView webView=binding.web;
         webView.setClickable(true);//设置可点击
@@ -59,11 +64,12 @@ public class NotificationsFragment extends Fragment {
 
         webView.getSettings().setMediaPlaybackRequiresUserGesture(false);
 
+        sheds_btu.setBackground(getResources().getDrawable(R.drawable.round_select));
+        greenhouses_btu.setBackground(getResources().getDrawable(R.drawable.round));
+        field_btu.setBackground(getResources().getDrawable(R.drawable.round));
         webView.loadUrl("https://sh.coda.wiki:5002/2000");
 
-        Button sheds_btu=binding.shedsButton;
-        Button greenhouses_btu=binding.greenhousesButton;
-        Button field_btu=binding.fieldsButton;
+
 
 /*        webView.setWebViewClient(new WebViewClient(){
             @Override
@@ -110,20 +116,34 @@ public class NotificationsFragment extends Fragment {
         });
 
         sheds_btu.setOnClickListener(new View.OnClickListener() {
+            @SuppressLint("UseCompatLoadingForDrawables")
             @Override
-            public void onClick(View v) { webView.loadUrl("https://sh.coda.wiki:5002/2000"); }
+            public void onClick(View v) {
+                sheds_btu.setBackground(getResources().getDrawable(R.drawable.round_select));
+                greenhouses_btu.setBackground(getResources().getDrawable(R.drawable.round));
+                field_btu.setBackground(getResources().getDrawable(R.drawable.round));
+                webView.loadUrl("https://sh.coda.wiki:5002/2000");
+            }
         });
 
         greenhouses_btu.setOnClickListener(new View.OnClickListener() {
+            @SuppressLint("UseCompatLoadingForDrawables")
             @Override
             public void onClick(View v) {
+                sheds_btu.setBackground(getResources().getDrawable(R.drawable.round));
+                greenhouses_btu.setBackground(getResources().getDrawable(R.drawable.round_select));
+                field_btu.setBackground(getResources().getDrawable(R.drawable.round));
                 webView.loadUrl("https://sh.coda.wiki:5002/2001");
             }
         });
 
         field_btu.setOnClickListener(new View.OnClickListener() {
+            @SuppressLint("UseCompatLoadingForDrawables")
             @Override
             public void onClick(View v) {
+                sheds_btu.setBackground(getResources().getDrawable(R.drawable.round));
+                greenhouses_btu.setBackground(getResources().getDrawable(R.drawable.round));
+                field_btu.setBackground(getResources().getDrawable(R.drawable.round_select));
                 webView.loadUrl("https://sh.coda.wiki:5002/2002");
             }
         });
