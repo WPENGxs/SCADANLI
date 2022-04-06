@@ -91,7 +91,6 @@ public class DashboardFragment extends Fragment {
         }
 
         CreateLine(binding.infobox,getContext());
-        Toast.makeText(getContext(),list_line,Toast.LENGTH_LONG).show();
 
         return root;
     }
