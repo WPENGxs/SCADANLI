@@ -2,6 +2,7 @@ package com.example.scadanli;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
@@ -47,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
         // 设置你申请的应用appid,请勿在'='与appid之间添加空格及空转义符
 
         // 注意： appid 必须和下载的SDK保持一致，否则会出现10407错误
-        SpeechUtility.createUtility(MainActivity.this, "appid=" + "cf2e2940");
+        SpeechUtility.createUtility(MainActivity.this, "appid=cf2e2940"+","+"SpeechConstant.FORCE_LOGIN=true");
         // 以下语句用于设置日志开关（默认开启），设置成false时关闭语音云SDK日志打印
         Setting.setShowLog(true);
 
@@ -72,4 +73,13 @@ public class MainActivity extends AppCompatActivity {
         this.context=getApplicationContext();//获取现在的context,传给DashboardFragment
 
     }
+
+    /*@Override
+    public void onBackPressed(){
+        finish();
+        System.exit(0);
+    }*/
+
+
+
 }
