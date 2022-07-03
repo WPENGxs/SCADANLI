@@ -17,6 +17,8 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        // JitPack 远程仓库：https://jitpack.io
+        maven { url 'https://jitpack.io' }
         jcenter() // Warning: this repository is going to shut down soon
     }
 }

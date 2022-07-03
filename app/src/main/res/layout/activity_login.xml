@@ -20,10 +20,10 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="IoT-NLI"
             android:layout_marginBottom="30dp"
-            android:textSize="25sp"/>
+            android:gravity="center"
+            android:text="农业智能管理平台"
+            android:textSize="25sp" />
 
         <Spinner
             android:layout_width="300dp"
@@ -35,16 +35,17 @@
         <EditText
             android:layout_width="300dp"
             android:layout_height="50dp"
-            android:hint="Access Key ID"
+            android:layout_marginBottom="30dp"
             android:background="@drawable/round_select"
-            android:layout_marginBottom="30dp"/>
+            android:hint="Account ID" />
 
         <EditText
             android:layout_width="300dp"
             android:layout_height="50dp"
-            android:hint="Secret Access Key"
+            android:layout_marginBottom="30dp"
             android:background="@drawable/round_select"
-            android:layout_marginBottom="30dp"/>
+            android:hint="Account Password"
+            android:inputType="textPassword" />
 
         <Button
             android:id="@+id/login_button"

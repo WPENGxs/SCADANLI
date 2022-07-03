@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">SCADANLI</string>
+    <string name="app_name">农业智能管理平台</string>
     <string name="title_home">智能实时控制</string>
     <string name="title_dashboard">实时设备状态</string>
     <string name="title_notifications">实景观测</string>

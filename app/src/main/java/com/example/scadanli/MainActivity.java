@@ -1,11 +1,14 @@
 package com.example.scadanli;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -27,6 +30,7 @@ import com.iflytek.cloud.SpeechUtility;
 import com.iflytek.cloud.Setting;
 import com.iflytek.cloud.SpeechUtility;
 
+import java.io.IOException;
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
@@ -38,6 +42,9 @@ public class MainActivity extends AppCompatActivity {
     public static Data data;
     public static SQLiteDatabase database;
 
+    Handler handler=null;
+
+    @SuppressLint("HandlerLeak")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -70,7 +77,56 @@ public class MainActivity extends AppCompatActivity {
         NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
         NavigationUI.setupWithNavController(binding.navView, navController);
 
-        this.context=getApplicationContext();//获取现在的context,传给DashboardFragment
+        context=getApplicationContext();//获取现在的context,传给DashboardFragment
+
+        handler=new android.os.Handler(){
+            public void handleMessage(Message message){
+                switch (message.what){
+                    case 0x01://测试通知栏提醒
+                        MyNotification.TestNotification(context);
+                        break;
+                    case 0x02:
+                        MyNotification.SendNotification(context,"警告","您有一个预警信息需要处理","","Warning");
+                        break;
+                    case 0x03:
+                        MyNotification.SendNotification(context,"通知","昨天的监控报告已生成,请查收","","Report");
+                        break;
+                    default:
+                        Toast.makeText(context,"推送服务掉线",Toast.LENGTH_SHORT).show();
+                        break;
+                }
+            }
+        };
+        //开启一个监听线程,用来接受请求或信息
+        Thread thread = new Thread() {
+            @Override
+            @SuppressWarnings("InfiniteLoopStatement")
+            public void run() {
+                try {
+                    SCADANLI_Socket socket = new SCADANLI_Socket("1.15.28.84", 39002);
+                    while (true) {//死循环读信息
+                        Message message = new Message();
+                        message.what = 0xff;
+                        String str = "" + socket.GetData();
+                        switch (str) {
+                            case "test":
+                                message.what = 0x01;
+                                break;
+                            case "warning":
+                                message.what = 0x02;
+                                break;
+                            case "report":
+                                message.what = 0x03;
+                                break;
+                        }
+                        handler.sendMessage(message);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        thread.start();//开启线程
 
     }
 

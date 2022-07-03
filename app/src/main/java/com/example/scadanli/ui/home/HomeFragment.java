@@ -2,6 +2,7 @@ package com.example.scadanli.ui.home;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
@@ -24,12 +25,23 @@ import androidx.annotation.RequiresApi;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.amap.api.location.AMapLocationClient;
+import com.amap.api.services.core.AMapException;
+import com.amap.api.services.weather.LocalWeatherForecastResult;
+import com.amap.api.services.weather.LocalWeatherLive;
+import com.amap.api.services.weather.LocalWeatherLiveResult;
+import com.amap.api.services.weather.WeatherSearch;
+import com.amap.api.services.weather.WeatherSearchQuery;
 import com.example.scadanli.MainActivity;
+import com.example.scadanli.MyNotification;
 import com.example.scadanli.R;
 import com.example.scadanli.SCADANLI_Socket;
+
 import com.example.scadanli.databinding.FragmentHomeBinding;
-import com.example.scadanli.ui.notifications.NotificationsFragment;
 import com.example.scadanli.util.JsonParser;
+import com.hjq.permissions.OnPermissionCallback;
+import com.hjq.permissions.Permission;
+import com.hjq.permissions.XXPermissions;
 import com.iflytek.cloud.ErrorCode;
 import com.iflytek.cloud.InitListener;
 import com.iflytek.cloud.RecognizerListener;
@@ -46,6 +58,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -84,7 +97,7 @@ public class HomeFragment extends Fragment {
 
 
     @SuppressLint("HandlerLeak")
-    @RequiresApi(api = Build.VERSION_CODES.M)
+    @RequiresApi(api = Build.VERSION_CODES.Q)
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
         homeViewModel =
@@ -95,7 +108,7 @@ public class HomeFragment extends Fragment {
 
         talk_view=binding.talkView;//定义中间的LinearLayout——talk_view
 
-        AddText(talk_view,"您好,这里是智能农业实时操控平台,请问有什么可以帮到您的吗?",false);
+        AddText(talk_view,"欢迎来到农业智能管理平台\n有什么可以帮到您的?",false);
         //添加机器人默认语句
 
         handler=new android.os.Handler(){
@@ -118,7 +131,10 @@ public class HomeFragment extends Fragment {
             }
         };
 
-
+        /*确保调用SDK任何接口前先调用更新隐私合规updatePrivacyShow、updatePrivacyAgree两个接口并且参数值都为true，若未正确设置有崩溃风险***
+         使用sea SDK 功能前请设置隐私权政策是否弹窗告知用户*/
+        AMapLocationClient.updatePrivacyShow(getContext(), true, true);
+        AMapLocationClient.updatePrivacyAgree(getContext(), true);
 
         editText = binding.editText;
         Button text_button = binding.textButton;
@@ -129,24 +145,78 @@ public class HomeFragment extends Fragment {
                 if(!MainActivity.inputText.equals("")){
                     AddText(talk_view, MainActivity.inputText,true);//插入对话框
                     editText.setText("");//对话框置空
-                    Thread thread= new Thread() {
-                        @Override
-                        public void run(){
-                            Message message=new Message();
-                            message.what=0x01;
-                            try {
-                                SCADANLI_Socket socket=new SCADANLI_Socket("1.15.28.84",39001);
-                                socket.SentData(MainActivity.inputText);
-                                return_str=socket.GetData();
-                                handler.sendMessage(message);
 
-                                socket.DisConnect();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
+                    if(MainActivity.inputText.contains("天气")){//天气搜索
+                        //天气搜索范例:合肥天气怎么样
+                        //检索参数为城市和天气类型，实况天气为WEATHER_TYPE_LIVE、天气预报为WEATHER_TYPE_FORECAST
+                        WeatherSearchQuery mQuery = new WeatherSearchQuery(
+                                MainActivity.inputText.substring(0,MainActivity.inputText.indexOf("天气")).replace("的",""),
+                                WeatherSearchQuery.WEATHER_TYPE_LIVE);
+                        WeatherSearch mWeatherSearch= null;
+                        try {
+                            mWeatherSearch = new WeatherSearch(getContext());
+                            mWeatherSearch.setOnWeatherSearchListener(new WeatherSearch.OnWeatherSearchListener() {
+                                @Override
+                                public void onWeatherLiveSearched(LocalWeatherLiveResult localWeatherLiveResult, int rCode) {
+                                    //天气实时数据
+                                    if (rCode == 1000) {
+                                        if (localWeatherLiveResult != null&&localWeatherLiveResult.getLiveResult() != null) {
+                                            LocalWeatherLive weatherlive = localWeatherLiveResult.getLiveResult();
+                                            String WeatherStr = "" + weatherlive.getReportTime() + "发布\n" +
+                                                    weatherlive.getWeather() + "\n" +
+                                                    weatherlive.getTemperature() + "°" + "\n" +
+                                                    weatherlive.getWindDirection() + "风\t" +
+                                                    weatherlive.getWindPower() + "级" + "\n" +
+                                                    "湿度\t" + weatherlive.getHumidity() + "%";
+                                            RobotReturn(WeatherStr);//机器人返回
+                                        }else {
+                                            Toast.makeText(getContext(),"ERROR!",Toast.LENGTH_SHORT).show();
+                                        }
+                                    }else {
+                                        Toast.makeText(getContext(),"ERROR!",Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+
+                                @Override
+                                public void onWeatherForecastSearched(LocalWeatherForecastResult localWeatherForecastResult, int i) {
+                                    //天气预报数据
+                                }
+                            });
+                            mWeatherSearch.setQuery(mQuery);
+                            mWeatherSearch.searchWeatherAsyn(); //异步搜索
+                        } catch (AMapException e) {
+                            Toast.makeText(getContext(),"ERROR!",Toast.LENGTH_SHORT).show();
+                            e.printStackTrace();
                         }
-                    };
-                    thread.start();//开启线程
+                    }else if(MainActivity.inputText.contains("仪器预警")){//获取仪器预警
+                        //仪器预警范例:查看仪器预警
+                        RobotReturn("正在获取中...");
+                        RobotReturn("昨日有1次预警\n\n水箱水位不足\n状态:已处理");
+
+                    }else if(MainActivity.inputText.contains("总结")){//获取总结
+                        //总结范例:查看总结
+                        RobotReturn("正在获取中...");
+                    }
+                    else {//自然语言处理
+                        Thread thread = new Thread() {
+                            @Override
+                            public void run() {
+                                Message message = new Message();
+                                message.what = 0x01;
+                                try {
+                                    SCADANLI_Socket socket = new SCADANLI_Socket("1.15.28.84", 39001);
+                                    socket.SentData(MainActivity.inputText);
+                                    return_str = socket.GetData();
+                                    handler.sendMessage(message);
+
+                                    socket.DisConnect();
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        };
+                        thread.start();//开启线程
+                    }
                     /*try {
                         thread.join(2000);//主线程等待服务器返回值，等待了2s
                     } catch (InterruptedException e) {
@@ -188,6 +258,7 @@ public class HomeFragment extends Fragment {
         ifly_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                GetIFlyPermission();
                 if(!isClick_even){
                     ifly();
                 }
@@ -202,10 +273,29 @@ public class HomeFragment extends Fragment {
         return root;
     }
 
+    public void GetIFlyPermission(){
+        if(!XXPermissions.isGranted(getContext(),Permission.RECORD_AUDIO)){
+            XXPermissions.with(this).permission(Permission.RECORD_AUDIO).request(new OnPermissionCallback() {
+                @Override
+                public void onGranted(List<String> permissions, boolean all) {
+                    if(all){
+//                        Toast.makeText(getContext(),"开始录音",Toast.LENGTH_SHORT).show();
+                    }else {
+                        AlertDialog.Builder dialog=new AlertDialog.Builder(getContext());
+                        dialog.setTitle("权限错误");
+                        dialog.setMessage("未授权录音权限，无法进行语言识别");
+                        dialog.show();
+                    }
+                }
+            });
+        }
+
+    }
+
     /**
      * 机器人返回函数
      */
-    @RequiresApi(api = Build.VERSION_CODES.M)
+    @RequiresApi(api = Build.VERSION_CODES.Q)
     public void RobotReturn(String str){
         AddText(talk_view , str,false);
         //return_str="";//将返回字符串置空
@@ -222,7 +312,7 @@ public class HomeFragment extends Fragment {
         StringBuilder return_str= new StringBuilder();
         while(str.contains("/")){
             int num=str.indexOf("/");
-            return_str.append("Instructions");
+            //return_str.append("Instructions");
             String work_str=str.substring(0,num);
 
             int loc=work_str.indexOf("-");
@@ -238,10 +328,12 @@ public class HomeFragment extends Fragment {
             work_str=work_str.substring(val+1);
 
             String act_str=work_str;
-            return_str.append("\nlocation:").append(loc_str)
+            return_str.append("执行操作:\n").append("已").append(act_str).append(loc_str)
+                    .append("的").append(obj_str).append(val_str);
+            /*return_str.append("\nlocation:").append(loc_str)
                     .append("\tobject:").append(obj_str)
                     .append("\nvalue:").append(val_str)
-                    .append("\taction:").append(act_str).append("\n");
+                    .append("\taction:").append(act_str).append("\n");*/
             str=str.substring(num+1);
         }
         return return_str.toString();
@@ -257,7 +349,7 @@ public class HomeFragment extends Fragment {
      * @param right_direction
      *              方向,false为头像在左,true为头像在右
      */
-    @RequiresApi(api = Build.VERSION_CODES.M)
+    @RequiresApi(api = Build.VERSION_CODES.Q)
     public void AddText(LinearLayout linearLayout, String str, boolean right_direction){
         LinearLayout talk_list=new LinearLayout(getContext());
         talk_list.setGravity(LinearLayout.HORIZONTAL);//设置方向
